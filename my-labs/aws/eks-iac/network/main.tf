@@ -87,14 +87,36 @@ resource "aws_subnet" "public" {
 
 
 ############################################
-# 4. 프라이빗 서브넷 (EKS 노드/내부 서비스용)
+# 4-1. 프라이빗 서브넷 (MGMT EC2 서비스용)
 ############################################
 
-resource "aws_subnet" "private" {
-  count = length(var.private_subnet_cidrs)
+resource "aws_subnet" "private01" {
+  count = length(var.private_subnet01_cidrs)
 
   vpc_id            = aws_vpc.this.id
-  cidr_block        = var.private_subnet_cidrs[count.index]
+  cidr_block        = var.private_subnet01_cidrs[count.index]
+  availability_zone = var.azs[count.index]
+
+  #프라이빗 서브넷: 퍼블릭 IP 자동할당 X
+  map_public_ip_on_launch = false
+
+  tags = {
+    Name = "${var.project_name}-private-${count.index + 1}"
+    #EKS에서 이 서브넷을 "내부용 NLB/내부 ELB" 위치로 인식하는 태그
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+    "kubernetes.io/role/internal-elb"           = "1"
+  }
+}
+
+############################################
+# 4-2. 프라이빗 서브넷 (EKS 노드/내부 서비스용)
+############################################
+
+resource "aws_subnet" "private02" {
+  count = length(var.private_subnet02_cidrs)
+
+  vpc_id            = aws_vpc.this.id
+  cidr_block        = var.private_subnet02_cidrs[count.index]
   availability_zone = var.azs[count.index]
 
   #프라이빗 서브넷: 퍼블릭 IP 자동할당 X
@@ -188,9 +210,16 @@ resource "aws_route_table" "private" {
   }
 }
 
-resource "aws_route_table_association" "private" {
-  count = length(aws_subnet.private)
+resource "aws_route_table_association" "private01" {
+  count = length(aws_subnet.private01)
 
-  subnet_id      = aws_subnet.private[count.index].id
+  subnet_id      = aws_subnet.private01[count.index].id
+  route_table_id = aws_route_table.private.id
+}
+
+resource "aws_route_table_association" "private02" {
+  count = length(aws_subnet.private02)
+
+  subnet_id      = aws_subnet.private02[count.index].id
   route_table_id = aws_route_table.private.id
 }

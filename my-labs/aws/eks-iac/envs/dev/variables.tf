@@ -36,16 +36,22 @@ variable "public_subnet_cidrs" {
   default     = ["10.0.1.0/24", "10.0.2.0/24"]
 }
 
-variable "private_subnet01_cidrs" {
-  description = "프라이빗 서브넷-01 CIDR 목록(각 AZ용)"
+variable "mgmt_subnet_cidrs" {
+  description = "mgmt 서브넷 CIDR 목록(각 AZ용)"
   type        = list(string)
   default     = ["10.0.11.0/24", "10.0.12.0/24"]
 }
 
-variable "private_subnet02_cidrs" {
-  description = "프라이빗 서브넷-02 CIDR 목록(각 AZ용)"
+variable "worker_subnet_cidrs" {
+  description = "worker 서브넷- CIDR 목록(각 AZ용)"
   type        = list(string)
   default     = ["10.0.21.0/24", "10.0.22.0/24"]
+}
+
+variable "db_subnet_cidrs" {
+  description = "db 서브넷 CIDR 목록(각 AZ용)"
+  type        = list(string)
+  default     = ["10.0.31.0/24", "10.0.32.0/24"]
 }
 
 variable "azs" {
@@ -59,12 +65,29 @@ variable "my_ip_cidr" {
   type        = string
 }
 
-variable "ami_id" {
-  description = "아마존 EC2 AMI ID"
+variable "bastion_ami_id" {
+  description = "Bastion EC2 AMI ID - Amazon Linux 2023 kernel-6.12 AMI"
+  type        = string
+}
+
+variable "mgmt_ami_id" {
+  description = "Bastion EC2 AMI ID - Amazon Linux 2023 kernel-6.12 AMI"
   type        = string
 }
 
 variable "ssh_key_name" {
   description = "SSH 키페어"
   type        = string
+}
+
+variable "instance_type_bastion" {
+  description = "bastion 인스턴스 타입"
+  type        = string
+  default     = "t3.micro"
+}
+
+variable "instance_type_mgmt" {
+  description = "mgmt 인스턴스 타입"
+  type        = string
+  default     = "t3.small"
 }
