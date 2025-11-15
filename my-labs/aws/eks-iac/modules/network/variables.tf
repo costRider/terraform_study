@@ -6,12 +6,6 @@
 # 네트워크 구성 시 변경 가능성이 있는 값들을 변수로 분리
 # main.tf는 구조에 집중 terraform.tfvars는 환경별 값에 집중
 
-variable "aws_region" {
-  description = "리소스를 생성할 AWS 리전(예: ap-northeast-2)"
-  type        = string
-  default     = "ap-northeast-2"
-}
-
 variable "project_name" {
   description = "프로젝트 명 prefix(태그/이름에 사용)"
   type        = string
@@ -31,21 +25,27 @@ variable "vpc_cidr" {
 }
 
 variable "public_subnet_cidrs" {
-  description = "퍼블릭 서브넷 CIDR 목록(각 AZ용)"
+  description = "퍼블릭 서브넷(Bastion) CIDR 목록(각 AZ용)"
   type        = list(string)
   default     = ["10.0.1.0/24", "10.0.2.0/24"]
 }
 
-variable "private_subnet01_cidrs" {
-  description = "프라이빗 서브넷-01 CIDR 목록(각 AZ용)"
+variable "mgmt_subnet_cidrs" {
+  description = "MGMT(관리용EC2)용 CIDR 목록(각 AZ용)"
   type        = list(string)
   default     = ["10.0.11.0/24", "10.0.12.0/24"]
 }
 
-variable "private_subnet02_cidrs" {
-  description = "프라이빗 서브넷-02 CIDR 목록(각 AZ용)"
+variable "worker_subnet_cidrs" {
+  description = "WorkerNode용 CIDR 목록(각 AZ용)"
   type        = list(string)
   default     = ["10.0.21.0/24", "10.0.22.0/24"]
+}
+
+variable "db_subnet_cidrs" {
+  description = "Database용 CIDR 목록(각 AZ용)"
+  type = list(string)
+  default = [ "10.0.31.0/24","10.0.32.0/24" ]
 }
 
 variable "azs" {
@@ -59,9 +59,26 @@ variable "my_ip_cidr" {
   type        = string
 }
 
-variable "ami_id" {
-  description = "아마존 EC2 AMI ID"
+variable "bastion_ami_id" {
+  description = "Bastion 용 AMI ID"
+  type = string
+}
+
+variable "mgmt_ami_id" {
+  description = "MGMT용 AMI ID"
+  type = string
+}
+
+variable "instance_type_bastion" {
+  description = "Bastion용 인스턴스 타입"
   type        = string
+  default = "t3.micro"
+}
+
+variable "instance_type_mgmt" {
+  description = "MGMT용 인스턴스 타입"
+  type = string
+  default = "t3.small"
 }
 
 variable "ssh_key_name" {
