@@ -1,9 +1,8 @@
 #####
 #
-# 네트워크 변수 정의
+# main 변수 정의
 #
 ####
-# 네트워크 구성 시 변경 가능성이 있는 값들을 변수로 분리
 # main.tf는 구조에 집중 terraform.tfvars는 환경별 값에 집중
 
 variable "aws_region" {
@@ -90,4 +89,39 @@ variable "instance_type_mgmt" {
   description = "mgmt 인스턴스 타입"
   type        = string
   default     = "t3.small"
+}
+
+variable "cluster_version" {
+  description = "EKS 버전(예: 1.30)"
+  type        = string
+}
+
+variable "node_instance_types" {
+  description = "EKS 노드 인스턴스 타입 목록"
+  type        = list(string)
+}
+
+variable "node_capacity_type" {
+  description = "ON_DEMAND 또는 SPOT"
+  type        = string
+}
+
+variable "node_desired_size" {
+  description = "NodeGroup desired"
+  type        = number
+}
+
+variable "node_min_size" {
+  description = "NodeGroup Min"
+  type        = number
+}
+
+variable "node_max_size" {
+  description = "NodeGroup Max"
+  type        = number
+}
+
+variable "node_disk_siez" {
+  description = "NodeGroup 루트 디스크 크기"
+  type        = number
 }
