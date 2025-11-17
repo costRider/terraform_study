@@ -43,11 +43,25 @@ variable "node_sg_id" {
   type = string
 }
 
-#NodeGroup 스펙
-variable "node_instance_types" {
-  description = "EKS 워커 노드 인스턴스 타입 목록"
+#default NodeGroup 스펙
+variable "node_instance_types_default" {
+  description = "EKS default 워커 노드 인스턴스 타입 목록"
   type = list(string)
   default = ["t3.small"]
+}
+
+#app NodeGroup 스펙
+variable "node_instance_types_app" {
+  description = "EKS app 워커 노드 인스턴스 타입 목록"
+  type = list(string)
+  default = [ "t3.small" ]
+}
+
+#obs NodeGroup 스펙
+variable "node_instance_types_obs" {
+  description = "EKS obs 워커노드 인스턴스 타입 목록"
+  type = list(string)
+  default = [ "t3.medium" ]
 }
 
 variable "node_capacity_type" {
@@ -79,11 +93,11 @@ variable "node_disk_siez" {
   type = number
   default = 30
 }
-
+/*
 variable "node_lables" {
   description = "워커 노드에 부여할 라벨 map"
   type = map(string)
   default = {
     "role" = "app"
   }
-}
+}*/

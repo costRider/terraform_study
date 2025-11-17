@@ -147,7 +147,105 @@ resource "aws_eks_cluster" "this" {
 }
 
 ########################################
-# 5. EKS Managed Node Group
+# 5. EKS Managed Node Group(app)
+########################################
+
+resource "aws_eks_node_group" "app" {
+  cluster_name = aws_eks_cluster.this.name
+  node_group_name = "${var.cluster_name}-ng-app"
+
+  node_role_arn = aws_iam_role.eks_node.arn
+
+  subnet_ids = var.worker_subnet_ids
+
+  scaling_config {
+    desired_size = var.node_desired_size
+    min_size = var.node_min_size
+    max_size = var.node_max_size
+  }
+
+  capacity_type = var.node_capacity_type # ON_DEMAND or Spot
+
+  instance_types = var.node_instance_types_app
+
+  disk_size = var.node_disk_siez
+
+  //labels = var.node_lables
+
+  labels = {
+    role = "app"
+    nodegroup = "app"
+  }
+
+  taint {
+    key = "role"
+    value = "app"
+    effect = "NO_SCHEDULE"
+  }
+
+  tags = {
+    Name = "${var.cluster_name}-ng-app"
+    Project = var.project_name
+  }
+
+  depends_on = [ aws_eks_cluster.this,
+  aws_iam_role_policy_attachment.eks_node_AmazonEC2ContainerRegistryReadOnly,
+  aws_iam_role_policy_attachment.eks_node_AmazonEKS_CNI_Policy,
+  aws_iam_role_policy_attachment.eks_node_AmazonEKSWorkerNodePolicy 
+  ]
+}
+
+########################################
+# 5. EKS Managed Node Group(obs)
+########################################
+
+resource "aws_eks_node_group" "obs" {
+  cluster_name = aws_eks_cluster.this.name
+  node_group_name = "${var.cluster_name}-ng-obs"
+
+  node_role_arn = aws_iam_role.eks_node.arn
+
+  subnet_ids = var.worker_subnet_ids
+
+  scaling_config {
+    desired_size = var.node_desired_size
+    min_size = var.node_min_size
+    max_size = var.node_max_size
+  }
+
+  capacity_type = var.node_capacity_type # ON_DEMAND or Spot
+
+  instance_types = var.node_instance_types_obs
+
+  disk_size = var.node_disk_siez
+
+  //labels = var.node_lables
+
+  labels = {
+    role = "obs"
+    nodegroup = "obs"
+  }
+
+  taint {
+    key = "role"
+    value = "obs"
+    effect = "NO_SCHEDULE"
+  }
+
+  tags = {
+    Name = "${var.cluster_name}-ng-obs"
+    Project = var.project_name
+  }
+
+  depends_on = [ aws_eks_cluster.this,
+  aws_iam_role_policy_attachment.eks_node_AmazonEC2ContainerRegistryReadOnly,
+  aws_iam_role_policy_attachment.eks_node_AmazonEKS_CNI_Policy,
+  aws_iam_role_policy_attachment.eks_node_AmazonEKSWorkerNodePolicy 
+  ]
+}
+
+########################################
+# 5. EKS Managed Node Group(default)
 ########################################
 
 resource "aws_eks_node_group" "default" {
@@ -166,11 +264,11 @@ resource "aws_eks_node_group" "default" {
 
   capacity_type = var.node_capacity_type # ON_DEMAND or Spot
 
-  instance_types = var.node_instance_types 
+  instance_types = var.node_instance_types_default
 
   disk_size = var.node_disk_siez
 
-  labels = var.node_lables
+  //labels = var.node_lables
 
   tags = {
     Name = "${var.cluster_name}-ng-default"

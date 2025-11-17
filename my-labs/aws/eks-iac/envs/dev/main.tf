@@ -39,12 +39,15 @@ module "eks" {
   #필요하면 ALB SG나 추가 SG를 여기 리스트로 전달
   cluster_additional_sg_ids = []
 
-  node_instance_types = var.node_instance_types
-  node_capacity_type  = var.node_capacity_type
-  node_desired_size   = var.node_desired_size
-  node_disk_siez      = var.node_disk_siez
-  node_min_size       = var.node_min_size
-  node_max_size       = var.node_max_size
+  node_instance_types_default = var.node_instance_types_default
+  node_instance_types_app     = var.node_instance_types_app
+  node_instance_types_obs     = var.node_instance_types_obs
+
+  node_capacity_type = var.node_capacity_type
+  node_desired_size  = var.node_desired_size
+  node_disk_siez     = var.node_disk_siez
+  node_min_size      = var.node_min_size
+  node_max_size      = var.node_max_size
 
 }
 

@@ -96,8 +96,18 @@ variable "cluster_version" {
   type        = string
 }
 
-variable "node_instance_types" {
-  description = "EKS 노드 인스턴스 타입 목록"
+variable "node_instance_types_default" {
+  description = "EKS default 노드 인스턴스 타입 목록"
+  type        = list(string)
+}
+
+variable "node_instance_types_app" {
+  description = "EKS app 노드 인스턴스 타입 목록"
+  type        = list(string)
+}
+
+variable "node_instance_types_obs" {
+  description = "EKS obs 노드 인스턴스 타입 목록"
   type        = list(string)
 }
 
