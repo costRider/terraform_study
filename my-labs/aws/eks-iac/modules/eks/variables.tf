@@ -93,11 +93,12 @@ variable "node_disk_siez" {
   type = number
   default = 30
 }
-/*
-variable "node_lables" {
-  description = "워커 노드에 부여할 라벨 map"
+
+
+################
+# 태깅 추가
+################
+variable "common_tags" {
+  description = "공통 태그(root에서 내려주는 태그)"
   type = map(string)
-  default = {
-    "role" = "app"
-  }
-}*/
+}

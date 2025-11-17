@@ -17,11 +17,9 @@ resource "aws_vpc" "this" {
   enable_dns_support   = true
   enable_dns_hostnames = true
 
-  tags = {
+  tags = merge(var.common_tags,{
     Name        = "${var.project_name}-vpc"
-    Project     = var.project_name
-    Environment = "dev"
-  }
+  })
 }
 
 ############################################
@@ -31,10 +29,10 @@ resource "aws_vpc" "this" {
 
 resource "aws_internet_gateway" "this" {
   vpc_id = aws_vpc.this.id
-  tags = {
+
+  tags = merge(var.common_tags,{
     Name    = "${var.project_name}-igw"
-    Project = var.project_name
-  }
+  })
 }
 
 ############################################
@@ -52,12 +50,12 @@ resource "aws_subnet" "public" {
   #퍼블릭 서브넷: EC2/EKS 노드가 자동으로 퍼블릭 IP를 받도록 설정
   map_public_ip_on_launch = true
 
-  tags = {
+  tags = merge(var.common_tags,{
     Name = "${var.project_name}-public-${count.index + 1}"
     #EKS에서 이 서브넷을 "외부용 ELB(ALB.NLB) 배포 위치"로 인식하게 하는 태그
     "kubernetes.io/cluster/${var.cluster_name}" = "shared"
     "kubernetes.io/role/elb"                    = "1"
-  }
+  })
 }
 
 
@@ -75,12 +73,12 @@ resource "aws_subnet" "mgmt" {
   #프라이빗 서브넷: 퍼블릭 IP 자동할당 X
   map_public_ip_on_launch = false
 
-  tags = {
+  tags = merge(var.common_tags,{
     Name = "${var.project_name}-mgmt-${count.index + 1}"
     #EKS에서 이 서브넷을 "내부용 NLB/내부 ELB" 위치로 인식하는 태그
     "kubernetes.io/cluster/${var.cluster_name}" = "shared"
     "kubernetes.io/role/internal-elb"           = "1"
-  }
+  })
 }
 
 ############################################
@@ -97,12 +95,12 @@ resource "aws_subnet" "worker" {
   #프라이빗 서브넷: 퍼블릭 IP 자동할당 X
   map_public_ip_on_launch = false
 
-  tags = {
+  tags = merge(var.common_tags,{
     Name = "${var.project_name}-worker-${count.index + 1}"
     #EKS에서 이 서브넷을 "내부용 NLB/내부 ELB" 위치로 인식하는 태그
     "kubernetes.io/cluster/${var.cluster_name}" = "shared"
     "kubernetes.io/role/internal-elb"           = "1"
-  }
+  })
 }
 
 ############################################
@@ -116,11 +114,11 @@ resource "aws_subnet" "db" {
   availability_zone = var.azs[count.index]
   map_public_ip_on_launch = false
 
-  tags = {
+  tags = merge(var.common_tags,{
     Name = "${var.project_name}-db-${count.index+1}"
     "kubernetes.io/cluster/${var.cluster_name}" = "shared"
     "kubernetes.io/role/internal-elb"           = "1"
-  }
+  })
 }
 
 ############################################
@@ -136,10 +134,9 @@ resource "aws_eip" "nat" {
   #VIP 안에서 사용하는 EIP
   domain = "vpc"
 
-  tags = {
+  tags = merge(var.common_tags,{
     Name    = "${var.project_name}-nat-eip-${count.index+1}"
-    Project = var.project_name
-  }
+  })
 }
 
 # NAT Gateway (AZ별 1개씩, 해당 AZ의 Public subnet에 위치)
@@ -151,10 +148,9 @@ resource "aws_nat_gateway" "this" {
 
   subnet_id = aws_subnet.public[count.index].id
 
-  tags = {
+  tags = merge(var.common_tags,{
     Name = "${var.project_name}-nat-gw-${count.index+1}"
-    Project = var.project_name
-  }
+  })
 
   #NAT 생성은 IGW보다 느려서 depends_on으로 의존성 명시(안전빵)
   depends_on = [aws_internet_gateway.this]
@@ -174,10 +170,9 @@ resource "aws_route_table" "public" {
     gateway_id = aws_internet_gateway.this.id
   }
 
-  tags = {
+  tags = merge(var.common_tags,{
     Name    = "${var.project_name}-public-rt"
-    Project = var.project_name
-  }
+  })
 }
 
 #각 퍼블릭 서브넷을 퍼블릭 라우트 테이블에 연결 
@@ -204,10 +199,9 @@ resource "aws_route_table" "private" {
     nat_gateway_id = aws_nat_gateway.this[count.index].id
   }
 
-  tags = {
+  tags = merge(var.common_tags,{
     Name    = "${var.project_name}-private-rt${count.index+1}"
-    Project = var.project_name
-  }
+  })
 }
 
 ########################################

@@ -26,10 +26,9 @@ resource "aws_security_group" "bastion" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = {
+  tags = merge(var.common_tags,{
     Name    = "${var.project_name}-bastion-sg"
-    Project = var.project_name
-  }
+  })
 
 }
 
@@ -54,10 +53,9 @@ resource "aws_security_group" "mgmt" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = {
+  tags = merge(var.common_tags,{
     Name = "${var.project_name}-mgmt-sg"
-    Project = var.project_name
-  }
+  })
 }
 
 ########################################
@@ -86,9 +84,8 @@ resource "aws_security_group" "node" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = {
+  tags = merge(var.common_tags,{
     Name    = "${var.project_name}-node-sg"
-    Project = var.project_name
-  }
+  })
 }
 

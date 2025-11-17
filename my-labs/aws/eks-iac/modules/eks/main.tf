@@ -103,10 +103,9 @@ resource "aws_security_group" "eks_cluster" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = {
+  tags = merge(var.common_tags,{
     Name = "${var.project_name}-eks-cluster-sg"
-    Project = var.project_name
-  }
+  })
 
 }
 
@@ -134,11 +133,7 @@ resource "aws_eks_cluster" "this" {
     #service_ipv4_cidr = "192.10.0.0/16"
   }
 
-  tags = {
-    Name = var.cluster_name
-    Project = var.project_name
-    Enviroment = "dev"
-  }
+  tags = var.common_tags
 
   depends_on = [
     aws_iam_role_policy_attachment.eks_cluster_AmazonEKSClusterPolicy,
@@ -183,10 +178,9 @@ resource "aws_eks_node_group" "app" {
     effect = "NO_SCHEDULE"
   }
 
-  tags = {
+  tags = merge(var.common_tags,{
     Name = "${var.cluster_name}-ng-app"
-    Project = var.project_name
-  }
+  })
 
   depends_on = [ aws_eks_cluster.this,
   aws_iam_role_policy_attachment.eks_node_AmazonEC2ContainerRegistryReadOnly,
@@ -232,10 +226,9 @@ resource "aws_eks_node_group" "obs" {
     effect = "NO_SCHEDULE"
   }
 
-  tags = {
+  tags = merge(var.common_tags,{
     Name = "${var.cluster_name}-ng-obs"
-    Project = var.project_name
-  }
+  })
 
   depends_on = [ aws_eks_cluster.this,
   aws_iam_role_policy_attachment.eks_node_AmazonEC2ContainerRegistryReadOnly,
@@ -270,10 +263,9 @@ resource "aws_eks_node_group" "default" {
 
   //labels = var.node_lables
 
-  tags = {
+  tags = merge(var.common_tags,{
     Name = "${var.cluster_name}-ng-default"
-    Project = var.project_name
-  }
+  })
 
   depends_on = [ aws_eks_cluster.this,
   aws_iam_role_policy_attachment.eks_node_AmazonEC2ContainerRegistryReadOnly,

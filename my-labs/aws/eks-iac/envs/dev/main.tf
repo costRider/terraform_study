@@ -21,6 +21,8 @@ module "network" {
   instance_type_bastion = var.instance_type_bastion
   instance_type_mgmt    = var.instance_type_mgmt
   ssh_key_name          = var.ssh_key_name
+
+  common_tags = local.common_tags
 }
 
 module "eks" {
@@ -48,6 +50,8 @@ module "eks" {
   node_disk_siez     = var.node_disk_siez
   node_min_size      = var.node_min_size
   node_max_size      = var.node_max_size
+
+  common_tags = local.common_tags
 
 }
 

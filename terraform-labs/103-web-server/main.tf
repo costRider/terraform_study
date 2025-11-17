@@ -22,7 +22,7 @@ provider "aws" {
 
 resource "aws_vpc" "web" {
   cidr_block       = "10.0.0.0/16"
-  instance_tenancy = "default"
+
   tags = {
     Name = "tf-web"
   }
@@ -44,14 +44,9 @@ resource "aws_instance" "web" {
   vpc_security_group_ids      = [aws_security_group.web.id]
   associate_public_ip_address = true
 
-  user_data = <<EOF
-#!/bin/bash
-yum -y install httpd
-systemctl enable httpd
-systemctl start httpd
-echo '<html><h1>Hello From Your Linux Web Server!</h1></html>' > /var/www/html/index.html
-EOF
-
+  user_data = file("${path.module}/userdata.sh")
+  user_data_replace_on_change = true
+  
   tags = {
     Name = "tf-web"
   }

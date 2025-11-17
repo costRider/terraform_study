@@ -14,10 +14,10 @@ resource "aws_instance" "bastion" {
   vpc_security_group_ids = [aws_security_group.bastion.id] # 보안그룹 설정
 
   associate_public_ip_address = true #퍼블릭 접근 가능하도록 설정
-  tags = {
+  
+  tags = merge(var.common_tags,{
     Name = "${var.project_name}-bastion" # 태그명 설정
-    Project = var.project_name
-  }
+  })
 }
 
 resource "aws_instance" "mgmt" {
@@ -29,9 +29,8 @@ resource "aws_instance" "mgmt" {
 
   vpc_security_group_ids = [aws_security_group.mgmt.id]
 
-  tags = {
+  tags = merge(var.common_tags,{
     Name = "${var.project_name}-mgmt"
-    Project = var.project_name
-  }
+  })
 
 }

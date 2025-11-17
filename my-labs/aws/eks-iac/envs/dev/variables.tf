@@ -135,3 +135,22 @@ variable "node_disk_siez" {
   description = "NodeGroup 루트 디스크 크기"
   type        = number
 }
+
+##############
+# 태깅구분 하기
+##############
+
+variable "environment" {
+  description = "환경구분 (dev,stg,prod 등)"
+  type        = string
+}
+
+variable "owner" {
+  description = "리소스 소유자"
+  type        = string
+}
+
+variable "cost_center" {
+  description = "비용 / 태그용 값"
+  type        = string
+}

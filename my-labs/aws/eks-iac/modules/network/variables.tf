@@ -85,3 +85,11 @@ variable "ssh_key_name" {
   description = "SSH 키페어"
   type        = string
 }
+
+################
+# 태깅 추가
+################
+variable "common_tags" {
+  description = "공통 태그(root에서 내려주는 태그)"
+  type = map(string)
+}
