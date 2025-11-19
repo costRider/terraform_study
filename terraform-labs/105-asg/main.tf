@@ -36,7 +36,7 @@ resource "aws_subnet" "web" {
     Name = "tf-web"
   }
 }
-
+/*
 resource "aws_instance" "web" {
   ami                         = var.image_id
   instance_type               = var.instance_type
@@ -67,11 +67,127 @@ EOF
     Name = "tf-web"
   }
 }
+*/
+/*
+data "aws_vpc" "test" {
+  filter {
+    name   = "tag:Name"
+    values = ["tf-web"]
+  }
+}
+
+data "aws_subnet" "test" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.test.id]
+  }
+}
+*/
+
+data "aws_ami" "amzLinux" {
+  #최신 버전을 가져온다. 
+  most_recent      = true
+
+  #아마존 리눅스 공식계정
+  owners           = ["137112412989"]
+
+  #filter를 통해 원하는 이미지 버전을 가져온다.
+  filter {
+    name   = "name"
+    values = ["al2023-ami-*-x86_64"]  # Amazon Linux 2023 이름 규칙
+  }
+
+  filter {
+    name   = "root-device-type"
+    values = ["ebs"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
+  }
+}
+
+resource "aws_launch_template" "web" {
+
+  name = "lt-web"
+
+  image_id      = data.aws_ami.amzLinux.image_id //var.image_id
+  instance_type = var.instance_type
+
+  monitoring {
+    enabled = true
+  }
+
+  network_interfaces {
+    security_groups             = [aws_security_group.web.id]
+    associate_public_ip_address = true
+  }
+
+  key_name = "academyKey"
+
+  user_data = base64encode(<<-EOF
+ #!/bin/bash
+ yum -y install httpd
+ sed -i 's/Listen 80/Listen ${var.server_port}/' /etc/httpd/conf/httpd.conf
+ systemctl enable httpd
+ systemctl start httpd
+ echo '<html><h1>Hello From My Linux Web Server! ${var.server_port} </h1></html>' > /var/www/html/index.html
+EOF
+  )
+
+  tags = {
+    Name = "terraform-launch-template"
+  }
+}
+
+resource "aws_autoscaling_group" "web" {
+  #배포될 서브넷 multi az로 지정해야함(현재는 테스트로 단일 [2a,2c])
+  vpc_zone_identifier = [aws_subnet.web.id]
+
+  launch_template {
+    id      = aws_launch_template.web.id
+    version = aws_launch_template.web.latest_version
+  }
+
+  #rolling update (triggers 가 걸리면 update)
+  instance_refresh {
+    strategy = "Rolling"
+    preferences {
+      min_healthy_percentage = 50
+      instance_warmup        = 60
+    }
+  }
+  /*
+    lifecycle {
+    create_before_destroy = true
+  }
+*/
+  tag {
+    key                 = "Name"
+    value               = "tf-asg-web"
+    propagate_at_launch = true
+  }
+
+  desired_capacity = 2
+  max_size         = 4
+  min_size         = 2
+
+}
 
 resource "aws_security_group" "web" {
   vpc_id      = aws_vpc.web.id
-  name        = "${var.security_group_name}"
+  name        = var.security_group_name
   description = "Allow HTTP inbound traffic"
+
+  lifecycle {
+    create_before_destroy = true
+  }
 
   ingress {
     description = "HTTP from VPC"
@@ -80,7 +196,7 @@ resource "aws_security_group" "web" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  
+
   ingress {
     description = "SSH Port"
     from_port   = var.ssh_port
@@ -129,7 +245,7 @@ resource "aws_route_table_association" "web" {
 variable "server_port" {
   description = "server_port"
   type        = number
-  default = 80
+  default     = 80
 }
 
 variable "ssh_port" {
@@ -147,7 +263,7 @@ variable "security_group_name" {
 variable "image_id" {
   description = "image AMI"
   type        = string
-  default     = "ami-0aa02302a11ea5190"
+  default     = "ami-0ad90ede5f7a6f599" # Amazon Linux 2023 k-6.12
 }
 
 variable "instance_type" {
