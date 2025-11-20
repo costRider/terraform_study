@@ -1,0 +1,78 @@
+#!/bin/bash
+set -eux
+
+PORT="${server_port}"
+
+#──────────────────────────────
+# 1) OS 감지
+#──────────────────────────────
+OS_ID=""
+if [ -f /etc/os-release ]; then
+  . /etc/os-release
+  OS_ID="$ID"
+fi
+
+echo "Detected OS: $OS_ID"
+
+#──────────────────────────────
+# 2) OS별 패키지 설치 + Apache 설정
+#──────────────────────────────
+case "$OS_ID" in
+  amzn)
+    # Amazon Linux 2023 / 2
+    dnf -y update || yum -y update || true
+    dnf -y install httpd || yum -y install httpd
+
+    sed -i "s/Listen 80/Listen $PORT/" /etc/httpd/conf/httpd.conf
+
+    systemctl enable httpd
+    systemctl restart httpd
+    WEB_ROOT="/var/www/html"
+    ;;
+
+  ubuntu)
+    # Ubuntu 22.04 / 24.04
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update -y
+    apt-get install -y apache2
+
+    sed -i "s/Listen 80/Listen $PORT/" /etc/apache2/ports.conf
+
+    systemctl enable apache2
+    systemctl restart apache2
+    WEB_ROOT="/var/www/html"
+    ;;
+
+  *)
+    echo "Unsupported OS ($OS_ID), trying generic httpd/apache2 installation" || true
+    (dnf -y install httpd || yum -y install httpd || apt-get update -y && apt-get install -y apache2) || true
+    WEB_ROOT="/var/www/html"
+    ;;
+esac
+
+#──────────────────────────────
+# 3) EC2 메타데이터 가져오기 (IMDSv2)
+#──────────────────────────────
+TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" \
+  -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+
+INSTANCEID=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" \
+  http://169.254.169.254/latest/meta-data/instance-id)
+
+AZ=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" \
+  http://169.254.169.254/latest/meta-data/placement/availability-zone)
+
+#──────────────────────────────
+# 4) index.html 생성
+#──────────────────────────────
+mkdir -p "$WEB_ROOT"
+
+cat <<EOF > "$WEB_ROOT/index.html"
+<html>
+  <body>
+    <h1>Hello From My Web Server! Port: $PORT</h1>
+    <p>Instance: $INSTANCEID</p>
+    <p>AZ: $AZ</p>
+  </body>
+</html>
+EOF
