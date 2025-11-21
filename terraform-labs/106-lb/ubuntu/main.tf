@@ -119,53 +119,7 @@ resource "aws_route_table_association" "public_c" {
   subnet_id      = aws_subnet.web_c.id
   route_table_id = aws_route_table.public.id
 }
-/*
-resource "aws_instance" "web" {
-  ami                         = var.image_id
-  instance_type               = var.instance_type
-  subnet_id                   = aws_subnet.web.id
-  vpc_security_group_ids      = [aws_security_group.web.id]
-  associate_public_ip_address = true
-  key_name = "academyKey"
 
-  user_data = <<-EOF
- #!/bin/bash
- yum -y install httpd
- sed -i 's/Listen 80/Listen ${var.server_port}/' /etc/httpd/conf/httpd.conf
- systemctl enable httpd
- systemctl start httpd
- echo '<html><h1>Hello From My Linux Web Server! ${var.server_port} </h1></html>' > /var/www/html/index.html
-EOF
-
-  //user_data = file("${path.module}/userdata.sh")
-
- #user_data 를 사용하는데 templatefile의 내용을 불러올거고
- # 쓰는 방법은 templatefile("파일",파일에 선언한 변수에 값 할당)
-  //user_data = templatefile("${path.module}/userdata.tpl",{server_port=var.server_port})
-
-#user data를 update 후 적용하기 위해 instance를 삭제 후 재생성 한다.
-  user_data_replace_on_change = true
-
-  tags = {
-    Name = "tf-web"
-  }
-}
-*/
-/*
-data "aws_vpc" "test" {
-  filter {
-    name   = "tag:Name"
-    values = ["tf-web"]
-  }
-}
-
-data "aws_subnet" "test" {
-  filter {
-    name   = "vpc-id"
-    values = [data.aws_vpc.test.id]
-  }
-}
-*/
 
 #################################
 # ami 선택
@@ -244,13 +198,6 @@ resource "aws_launch_template" "web" {
     enabled = true
   }
 
-  /*
-  network_interfaces {
-    security_groups = [aws_security_group.web.id]
-    associate_public_ip_address = false
-  }
-*/
-  # ENI 블록 대신 이 한 줄로 SG만 지정
   vpc_security_group_ids = [aws_security_group.web.id]
 
   key_name = aws_key_pair.my-keypair.key_name //"academyKey"
@@ -271,14 +218,8 @@ resource "aws_launch_template" "web" {
 #################################
 
 resource "aws_autoscaling_group" "web" {
-  #배포될 서브넷 multi az로 지정해야함(현재는 테스트로 단일 [2a,2c])
-  /*
-  vpc_zone_identifier = [
-    aws_subnet.web_a.id,
-    aws_subnet.web_c.id,
-  ]
-*/
-  # 변경: 이제 private subnet 위에서만 인스턴스 뜨게
+
+  # private subnet 위에서만 인스턴스 뜨게
   vpc_zone_identifier = [
     aws_subnet.web_priv_a.id,
     aws_subnet.web_priv_c.id,
@@ -300,11 +241,7 @@ resource "aws_autoscaling_group" "web" {
       instance_warmup        = 60
     }
   }
-  /*
-    lifecycle {
-    create_before_destroy = true
-  }
-*/
+  
   tag {
     key                 = "Name"
     value               = "tf-asg-web"
@@ -370,7 +307,6 @@ resource "aws_lb_target_group" "target" {
     healthy_threshold   = 2
     unhealthy_threshold = 2
   }
-
 }
 
 # 연결
@@ -511,35 +447,9 @@ resource "aws_route_table_association" "private_c" {
   route_table_id = aws_route_table.private.id
 }
 
-
-/*
-resource "aws_route_table" "web" {
-  vpc_id = aws_vpc.web.id
-
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.web.id
-  }
-
-  tags = {
-    Name = "tf-web"
-  }
-}
-
-resource "aws_route_table_association" "web_a" {
-  subnet_id      = aws_subnet.web_a.id
-  route_table_id = aws_route_table.web.id
-}
-
-resource "aws_route_table_association" "web_c" {
-  subnet_id      = aws_subnet.web_c.id
-  route_table_id = aws_route_table.web.id
-}*/
-
 #############################
 # GW 생성 / NAT Route 종료
 #############################
-
 
 /*
 # 1) 키 생성
@@ -560,7 +470,6 @@ resource "local_file" "ssh_private_key" {
   filename = "${path.module}/my-keypair.pem"
 }
 */
-
 
 ##################################
 #

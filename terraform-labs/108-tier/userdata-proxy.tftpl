@@ -1,0 +1,30 @@
+#!/bin/bash
+set -eux
+
+# install nginx
+yum install -y nginx || dnf install -y nginx || true
+
+rm -f /etc/nginx/conf.d/*.conf
+
+cat >/etc/nginx/conf.d/reverse-proxy.conf <<EOF
+server {
+    listen ${lb_port};
+    server_name _;
+
+    location = /health {
+        add_header Content-Type text/plain;
+        return 200 'ok';
+    }
+
+    location / {
+        proxy_pass http://${backend_host}:${backend_port};
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+}
+EOF
+
+systemctl enable nginx
+systemctl restart nginx
