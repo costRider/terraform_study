@@ -272,16 +272,16 @@ resource "aws_launch_template" "web" {
   key_name = aws_key_pair.my-keypair.key_name
 
   user_data = base64encode(templatefile("lab-userdata.tftpl", {
-    rds_endpoint = aws_db_instance.mariadb_multi_az.endpoint,
-    db_username = var.db_username,
-    db_password = var.db_password
+    rds_endpoint = aws_db_instance.mariadb_multi_az.endpoint
+    db_username  = var.db_username
+    db_password  = var.db_password
   }))
 
   lifecycle {
     create_before_destroy = true
   }
 
-  depends_on                  = [aws_db_instance.mariadb_multi_az]
+  depends_on = [aws_db_instance.mariadb_multi_az]
 
   tags = {
     Name = "terraform-launch-template"
@@ -290,7 +290,7 @@ resource "aws_launch_template" "web" {
 
 resource "aws_autoscaling_group" "web" {
   #배포될 서브넷 multi az로 지정해야함(현재는 테스트로 단일 [2a,2c])
-  vpc_zone_identifier = [aws_subnet.private_a.id,aws_subnet.private_c.id]
+  vpc_zone_identifier = [aws_subnet.private_a.id, aws_subnet.private_c.id]
 
   launch_template {
     id      = aws_launch_template.web.id
@@ -347,8 +347,8 @@ resource "aws_db_instance" "mariadb_multi_az" {
   instance_class    = "db.t3.medium" # db.t3.micro는 Multi-AZ를 지원하지 않을 수 있습니다.
   engine            = "mariadb"
   engine_version    = "10.6.24"
-  username          = "admin"
-  password          = "MyStrongPassword123!"
+  username          = var.db_username
+  password          = var.db_password
   db_name           = "mydb"
 
   # ★ Multi-AZ 활성화 (Master/Standby 구조) ★

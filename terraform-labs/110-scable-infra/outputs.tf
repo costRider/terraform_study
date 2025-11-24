@@ -10,5 +10,5 @@ output "out_lb" {
 
 output "out_db" {
   description = "db endpoint"
-  value = aws_db_instance.mariadb_multi_az.endpoint
+  value       = aws_db_instance.mariadb_multi_az.endpoint
 }

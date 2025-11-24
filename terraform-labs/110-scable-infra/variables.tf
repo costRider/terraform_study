@@ -13,8 +13,8 @@ variable "lb_name" {
 
 variable "httpd_port" {
   description = "web port"
-  type = number
-  default = 80
+  type        = number
+  default     = 80
 }
 
 variable "ssh_port" {

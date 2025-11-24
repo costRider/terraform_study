@@ -1,20 +1,35 @@
 #!/bin/bash -ex
-# Updated to use Amazon Linux 2023
 
 dnf update -y
-dnf install -y httpd wget php-fpm php-mysqli php-json php php-devel
-dnf install -y mariadb105-server
+dnf install -y httpd wget php-fpm php-mysqli php-json php php-devel mariadb105
 
-/usr/bin/systemctl enable httpd
-/usr/bin/systemctl start httpd
+# APACHE 설정
+systemctl enable httpd
+systemctl start httpd
 
+# RDS Config 파일 생성하여 관리 포인트 줄이기(AMI이미지 관리 No)
+cat > /var/www/html/rds.conf.php <<EOF
+<?php
+\$dbhost = "${rds_endpoint}";
+\$dbuser = "${db_username}";
+\$dbpass = "${db_password}";
+\$dbname = "mydb";
+?>
+EOF
+
+# Health Check
+echo "OK" > /var/www/html/health
+chmod 644 /var/www/html/health
+
+# 초기 SQL 다운로드
 cd /var/www/html
 wget https://aws-largeobjects.s3.ap-northeast-2.amazonaws.com/AWS-AcademyACF/lab7-app-php7.zip
 unzip lab7-app-php7.zip -d /var/www/html/
-chown -R apache:root /var/www/html
 
-# ------------------------
-# ALB / ELB Health Check
-# ------------------------
-echo "OK" > /var/www/html/health
-chmod 644 /var/www/html/health
+# DB 준비 (존재하지 않으면 생성)
+mysql -u "${db_username}" -p"${db_password}" -h "${rds_endpoint}" -e "CREATE DATABASE IF NOT EXISTS mydb;"
+
+# SQL Import
+mysql -u "${db_username}" -p"${db_password}" -h "${rds_endpoint}" mydb < /var/www/html/sql/addressbook.sql
+
+chown -R apache:root /var/www/html
