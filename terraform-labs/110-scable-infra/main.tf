@@ -263,7 +263,7 @@ resource "aws_launch_template" "web" {
 
   image_id      = var.image_id
   instance_type = var.instance_type
-
+  
   monitoring {
     enabled = true
   }
@@ -280,7 +280,7 @@ resource "aws_launch_template" "web" {
   lifecycle {
     create_before_destroy = true
   }
-
+  
   depends_on = [aws_db_instance.mariadb_multi_az]
 
   tags = {
@@ -300,12 +300,13 @@ resource "aws_autoscaling_group" "web" {
   #rolling update (triggers 가 걸리면 update)
   instance_refresh {
     strategy = "Rolling"
+    triggers = ["launch_template"]
     preferences {
       min_healthy_percentage = 50
       instance_warmup        = 60
     }
   }
-
+  
   target_group_arns = [aws_lb_target_group.target.arn]
   health_check_type = "ELB"
 
@@ -371,7 +372,7 @@ resource "aws_db_instance" "mariadb_multi_az" {
 
 
 #############################
-# LB 생성
+# LB/리스너/타겟그룹 생성
 #############################
 
 resource "aws_lb" "alb" {
@@ -437,7 +438,7 @@ resource "aws_lb_listener_rule" "asg" {
 }
 
 #############################
-# LB 생성 종료
+# LB/리스너/타겟그룹 생성 종료
 #############################
 
 #############################

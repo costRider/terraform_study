@@ -1,13 +1,22 @@
 #!/bin/bash -ex
 
 dnf update -y
-dnf install -y httpd wget php-fpm php-mysqli php-json php php-devel mariadb105
+dnf install -y httpd wget php-fpm php-mysqli php-json php php-devel mariadb105 unzip
 
-# APACHE 설정
 systemctl enable httpd
 systemctl start httpd
 
-# RDS Config 파일 생성하여 관리 포인트 줄이기(AMI이미지 관리 No)
+cd /var/www/html
+
+# 앱 먼저 내려받고
+wget -q https://aws-largeobjects.s3.ap-northeast-2.amazonaws.com/AWS-AcademyACF/lab7-app-php7.zip
+unzip -o lab7-app-php7.zip -d /var/www/html/
+
+# ───── 권한을 먼저 정리 ─────
+chown -R apache:apache /var/www/html
+chmod -R 755 /var/www/html
+
+# 이제 rds.conf.php 생성 (apache가 owner)
 cat > /var/www/html/rds.conf.php <<EOF
 <?php
 \$dbhost = "${rds_endpoint}";
@@ -17,19 +26,14 @@ cat > /var/www/html/rds.conf.php <<EOF
 ?>
 EOF
 
+chmod 664 /var/www/html/rds.conf.php
+
 # Health Check
 echo "OK" > /var/www/html/health
 chmod 644 /var/www/html/health
 
-# 초기 SQL 다운로드
-cd /var/www/html
-wget https://aws-largeobjects.s3.ap-northeast-2.amazonaws.com/AWS-AcademyACF/lab7-app-php7.zip
-unzip lab7-app-php7.zip -d /var/www/html/
+# DB 준비 (존재하지 않으면 생성) – 실패해도 스크립트 안 죽게
+mysql -u "${db_username}" -p"${db_password}" -h "${rds_endpoint}" -e "CREATE DATABASE IF NOT EXISTS mydb;" || true
 
-# DB 준비 (존재하지 않으면 생성)
-mysql -u "${db_username}" -p"${db_password}" -h "${rds_endpoint}" -e "CREATE DATABASE IF NOT EXISTS mydb;"
-
-# SQL Import
-mysql -u "${db_username}" -p"${db_password}" -h "${rds_endpoint}" mydb < /var/www/html/sql/addressbook.sql
-
-chown -R apache:root /var/www/html
+# SQL Import – 마찬가지로 실패해도 무시
+mysql -u "${db_username}" -p"${db_password}" -h "${rds_endpoint}" mydb < /var/www/html/sql/addressbook.sql || true
