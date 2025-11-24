@@ -145,7 +145,7 @@ resource "aws_eip" "private_c" {
 }
 
 # 라우팅 테이블 Zone A nat gw 모든 트래픽
-resource "aws_route_table" "private_a" {
+resource "aws_route_table" "zone_a" {
   vpc_id = aws_vpc.web.id
 
   route {
@@ -159,7 +159,7 @@ resource "aws_route_table" "private_a" {
 }
 
 # 라우팅 테이블 Zone C nat gw 모든 트래픽
-resource "aws_route_table" "private_c" {
+resource "aws_route_table" "zone_c" {
   vpc_id = aws_vpc.web.id
 
   route {
@@ -172,55 +172,28 @@ resource "aws_route_table" "private_c" {
   }
 }
 
-resource "aws_route_table" "db_a" {
-  vpc_id = aws_vpc.web.id
-
-  route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.private_a.id
-  }
-
-  tags = {
-    Name = "tf-db-a-rt"
-  }
-}
-
-# 라우팅 테이블 Zone C nat gw 모든 트래픽
-resource "aws_route_table" "db_c" {
-  vpc_id = aws_vpc.web.id
-
-  route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.private_c.id
-  }
-
-  tags = {
-    Name = "tf-db-c-rt"
-  }
-}
-
 # 라우팅 테이블 - subnet 연결 Zone A
-resource "aws_route_table_association" "private_a" {
+resource "aws_route_table_association" "zone_a" {
   subnet_id      = aws_subnet.private_a.id
-  route_table_id = aws_route_table.private_a.id
+  route_table_id = aws_route_table.zone_a.id
 }
 
 # 라우팅 테이블 - subnet 연결 Zone C
-resource "aws_route_table_association" "private_c" {
+resource "aws_route_table_association" "zone_c" {
   subnet_id      = aws_subnet.private_c.id
-  route_table_id = aws_route_table.private_c.id
+  route_table_id = aws_route_table.zone_c.id
 }
 
 # 라우팅 테이블 - subnet 연결 Zone A
 resource "aws_route_table_association" "db_a" {
   subnet_id      = aws_subnet.db_a.id
-  route_table_id = aws_route_table.db_a.id
+  route_table_id = aws_route_table.zone_a.id
 }
 
 # 라우팅 테이블 - subnet 연결 Zone C
 resource "aws_route_table_association" "db_c" {
   subnet_id      = aws_subnet.db_c.id
-  route_table_id = aws_route_table.db_c.id
+  route_table_id = aws_route_table.zone_c.id
 }
 
 # 퍼블릭 라우팅 테이블 인터넷 게이트 웨이 모든 트래픽
@@ -272,7 +245,7 @@ resource "aws_launch_template" "web" {
   key_name = aws_key_pair.my-keypair.key_name
 
   user_data = base64encode(templatefile("lab-userdata.tftpl", {
-    rds_endpoint = aws_db_instance.mariadb_multi_az.endpoint
+    rds_endpoint = aws_db_instance.mariadb_multi_az.address //aws_db_instance.mariadb_multi_az.endpoint
     db_username  = var.db_username
     db_password  = var.db_password
   }))

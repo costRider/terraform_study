@@ -8,21 +8,21 @@ systemctl start httpd
 
 cd /var/www/html
 
-# 앱 먼저 내려받고
+# 앱 다운로드
 wget -q https://aws-largeobjects.s3.ap-northeast-2.amazonaws.com/AWS-AcademyACF/lab7-app-php7.zip
 unzip -o lab7-app-php7.zip -d /var/www/html/
 
-# ───── 권한을 먼저 정리 ─────
+# 권한 정리
 chown -R apache:apache /var/www/html
 chmod -R 755 /var/www/html
 
-# 이제 rds.conf.php 생성 (apache가 owner)
+# rds.conf.php 생성 (rds.php가 include해서 씀)
 cat > /var/www/html/rds.conf.php <<EOF
 <?php
-\$dbhost = "${rds_endpoint}";
-\$dbuser = "${db_username}";
-\$dbpass = "${db_password}";
-\$dbname = "mydb";
+\$RDS_URL  = "${rds_endpoint}";
+\$RDS_DB   = "mydb";
+\$RDS_user = "${db_username}";
+\$RDS_pwd  = "${db_password}";
 ?>
 EOF
 
@@ -32,8 +32,37 @@ chmod 664 /var/www/html/rds.conf.php
 echo "OK" > /var/www/html/health
 chmod 644 /var/www/html/health
 
-# DB 준비 (존재하지 않으면 생성) – 실패해도 스크립트 안 죽게
-mysql -u "${db_username}" -p"${db_password}" -h "${rds_endpoint}" -e "CREATE DATABASE IF NOT EXISTS mydb;" || true
+########################################
+# 🔹 RDS 준비될 때까지 대기
+########################################
+for i in {1..30}; do
+  if mysql -u "${db_username}" -p"${db_password}" -h "${rds_endpoint}" -P 3306 -e "SELECT 1;" >/dev/null 2>&1; then
+    echo "RDS is ready"
+    break
+  fi
+  echo "Waiting for RDS... ($i/30)"
+  sleep 10
+done
 
-# SQL Import – 마찬가지로 실패해도 무시
-mysql -u "${db_username}" -p"${db_password}" -h "${rds_endpoint}" mydb < /var/www/html/sql/addressbook.sql || true
+########################################
+# 🔹 DB / 테이블 / 초기 데이터 세팅
+########################################
+mysql -u "${db_username}" -p"${db_password}" -h "${rds_endpoint}" -P 3306\
+  -e "CREATE DATABASE IF NOT EXISTS mydb;" || true
+
+
+########################################
+# TABLE 생성 확인 후 없으면 import
+########################################
+
+# 테이블 존재 확인
+CHECK=$(mysql -u "${db_username}" -p"${db_password}" -h "${rds_endpoint}" -P 3306\
+  -e "SHOW TABLES FROM mydb LIKE 'address';" | grep address || true)
+
+if [ -z "$CHECK" ]; then
+  echo "[INFO] No table found. Importing SQL..."
+  mysql -u "${db_username}" -p"${db_password}" -h "${rds_endpoint}" -P 3306\
+    mydb < /var/www/html/sql/addressbook.sql
+else
+  echo "[INFO] Table already exists. Skip import."
+fi
