@@ -1,0 +1,19 @@
+#!/bin/bash
+set -eux
+
+# Docker 설치
+yum install -y docker || dnf install -y docker || true
+systemctl enable docker
+systemctl start docker
+
+DB_HOSTNAME="${db_host}"
+DB_USERNAME="${db_user}"
+DB_PASSWORD="${db_pass}"
+
+docker run -d --name petclinic \
+  -p 8080:8080 \
+  -e SPRING_PROFILES_ACTIVE=mysql \
+  -e MYSQL_URL="jdbc:mysql://$DB_HOSTNAME:3306/petclinic" \
+  -e MYSQL_USER="$DB_USERNAME" \
+  -e MYSQL_PASS="$DB_PASSWORD" \
+  insulin90/petclinic:v0.2
