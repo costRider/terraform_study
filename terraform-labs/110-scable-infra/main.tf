@@ -1,8 +1,49 @@
-########################################
-#   2025-11-24 - LMK
-#   강의 실습
-#   2 tier 서비스 구성
-########################################
+###############################################
+# Terraform Configuration Header
+###############################################
+# Author        : 이민규
+# Created       : 2025-11-24
+# Last Updated  : 2025-11-25 by 이민규
+# File Name     : main.tf
+# Description   : AWS VPC + SUBNET + GW + ROUTE + ASG + TARGET GROUP + ALB + SG + RDS Infra Module
+#
+# Terraform     : >= 1.0.0, < 2.0.0
+# Provider      : AWS ~> 6.0
+# Environment   : practice-lab
+# Region        : ap-northeast-2
+#
+# Changelog:
+#   - 2025-11-24 : Initial version
+#   - 2025-11-25 : Added Infra Module
+#
+# Dependencies:
+#   - 명시적 의존성 : IGW - NAT, RDS - LAUNCH TEMPALTE
+#
+# Input Variables:
+#   - var.instance_type
+#   - var.db_username
+#   - var.db_password
+#   - var.lb_name
+#   - var.lb_port
+#   - var.httpd_port
+#   - var.ssh_port
+#   - var.web_security_group_name
+#   - var.lb_security_group_name
+#   - var.env
+#   - var.server_port
+#   - var.instance_type
+#
+# Outputs:
+#   - out_lb
+#   - out_db
+#
+# Notes:
+#   - User data changes recreate instances
+#
+# References:
+#   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs
+###############################################
+
 
 ##################################
 # VPC/SUBNET 생성
